@@ -1,4 +1,45 @@
 // Implementations related to Task Management through Callbacks
+void populate_task_callback_queue(int heap)
+{
+  int clean;
+  int tcp;
+
+  tcp = task_callback_pointer;
+  if (task_callback_pointer == heap) {
+    *(undefined4 *)(heap + 0x44) = 0;
+    *(undefined4 *)(heap + 0x40) = 0;
+  }
+  else {
+    if (*(ushort *)(heap + 0x10) < *(ushort *)(task_callback_pointer + 0x10)) {
+      clean = heap;
+      *(int *)(heap + 0x44) = task_callback_pointer;
+      task_callback_pointer = clean;
+      *(undefined4 *)(heap + 0x40) = 0;
+      *(int *)(tcp + 0x40) = heap;
+      return;
+    }
+    clean = *(int *)(task_callback_pointer + 0x44);
+    while( true ) {
+      if (clean == 0) {
+        *(int *)(tcp + 0x44) = heap;
+        *(int *)(heap + 0x40) = tcp;
+        return;
+      }
+      if (*(ushort *)(heap + 0x10) < *(ushort *)(clean + 0x10)) break;
+      tcp = clean;
+      clean = *(int *)(clean + 0x44);
+    }
+    *(int *)(heap + 0x44) = clean;
+    *(int *)(heap + 0x40) = tcp;
+    *(int *)(tcp + 0x44) = heap;
+    if (*(int *)(heap + 0x44) != 0) {
+      *(int *)(*(int *)(heap + 0x44) + 0x40) = heap;
+      return;
+    }
+  }
+  return;
+}
+
 int * run_task_function_callback
                 (int start,undefined4 context,undefined2 id,int address,int pointer,
                 undefined4 subcontext1,undefined4 subcontext2)
