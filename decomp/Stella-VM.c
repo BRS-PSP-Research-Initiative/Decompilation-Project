@@ -390,3 +390,22 @@ bool module_start(SceSize size,void *args)
   }
   return suid < 0;
 }
+
+// Production Debug
+void StellaVM_binary_Memory_debugger(int code)
+{
+  run_Memory_usage_debugger(code);
+  *fevt_&_minigame_data = *fevt_&_minigame_data & 0xffffffef;
+  return;
+}
+
+void StellaVM_binary_Memory_debugger(int heap)
+{
+  int data;
+  
+  data = get_Production_bootstrap(heap,0);
+  StellaVM_binary_Memory_debugger(data);
+  return;
+}
+
+

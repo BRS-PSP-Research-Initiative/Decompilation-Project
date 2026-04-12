@@ -1,5 +1,14 @@
 // All of the data flushing mechanisms (how to set data buffers and heap to default / 0 state)
 
+// SHARED
+uint flush_data_mask(int heap)
+{
+  if (heap != 0) {
+    return (*(uint *)(heap + 0x12074) & 0x100) >> 8;
+  }
+  return 0;
+}
+
 // AUDIO
 undefined4 flush_sceAudio_Data(void)
 {
@@ -61,6 +70,12 @@ int flush_audio_channel_buffer_length(uint channel,uint length)
     }
   }
   return result;
+}
+
+void flush_Atrac3_data_mask(void)
+{
+  flush_data_mask(*(int *)(Assets_heap + 0x80));
+  return;
 }
 
 // Global Game Data loaded at Start
@@ -137,4 +152,3 @@ void flush_umd_data(void)
   sceUmdActivate(1,"disc0:");
   return;
 }
-
