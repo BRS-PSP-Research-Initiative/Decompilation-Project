@@ -1,48 +1,46 @@
 // The Rendering System Stack code (minus Proprietary implementations)
 
-void sceDisplaySetMode_&_FrameBuf
-               (int pixel_format,int display_width,int display_height,int frame_buffer_width,
-               int depth_buffer_width)
+// Renderer Base Address init
+int check_Renderer_init_sanity(void)
 {
-  if (sceDisplaySetMode_callback? != (code *)0x0) {
-    (*sceDisplaySetMode_callback?)();
+  int error;
+  
+  if (((Renderer_base_address_state != 0) || (*(int *)(Renderer_base_address_heap + 0x10) != 0)) ||
+     (error = sceGeListUpdateStallAddr
+                         ((int)sceGeDraw_base_ptr,*(void **)(Renderer_base_address_heap + 8)),
+     -1 < error)) {
+    error = 0;
   }
-  temp_frame_buffer_pixel_format_data = pixel_format;
-  depth_buffer_width_data = depth_buffer_width;
-  temp_frame_buffer_width_data = frame_buffer_width;
-  display_width_data = display_width;
-  display_height_data = display_height;
-  sceDisplaySetMode(0,display_width,display_height);
-  if (frame_buffer_data == 1) {
-    sceDisplaySetFrameBuf
-              ((void *)(sceGeEdramAddr_data + temp_frame_buffer_width_data),depth_buffer_width,
-               pixel_format,1);
-  }
-  return;
+  return error;
 }
 
-void populate_render_buffer1
-               (int display_width,int display_height,int frame_buffer_width,int depth_buffer_width)
+void init_Renderer_base_address(uint mask,uint base,uint arg,uint flag,char *array)
 {
-  undefined4 *render_buffer1;
-  int slice;
-  undefined4 height;
-  undefined4 width;
-  
-  sceDisplaySetMode_&_FrameBuf
-            (temp_frame_buffer_pixel_format_data,display_width,display_height,frame_buffer_width,
-             depth_buffer_width);
-  render_buffer1 = &::render_buffer1;
-  slice = 4;
-  do {
-    height = display_height_data;
-    width = display_width_data;
-    slice = slice + -1;
-    render_buffer1[0x27] = temp_frame_buffer_pixel_format_data;
-    render_buffer1[0x28] = width;
-    render_buffer1[0x29] = height;
-    render_buffer1 = render_buffer1 + 0x3f;
-  } while (-1 < slice);
+  uint *VTYPE;
+  undefined *ptr;
+
+  ptr = Renderer_base_address_heap;
+  if (base != 0) {
+    VTYPE = *(uint **)(Renderer_base_address_heap + 8);
+    *VTYPE = base & 0xffffff | 0x12000000;
+    *(uint **)(ptr + 8) = VTYPE + 1;
+  }
+  if (flag != 0) {
+    VTYPE = *(uint **)(ptr + 8);
+    *VTYPE = ((flag << 4) >> 0x1c) << 0x10 | 0x10000000;
+    *(uint **)(ptr + 8) = VTYPE + 2;
+    VTYPE[1] = flag & 0xffffff | 0x2000000;
+  }
+  if (array != (char *)0x0) {
+    VTYPE = *(uint **)(ptr + 8);
+    *VTYPE = ((uint)((int)array << 4) >> 0x1c) << 0x10 | 0x10000000;
+    *(uint **)(ptr + 8) = VTYPE + 2;
+    VTYPE[1] = (uint)array & 0xffffff | 0x1000000;
+  }
+  VTYPE = *(uint **)(ptr + 8);
+  *VTYPE = (mask & 7) << 0x10 | arg | 0x4000000;
+  *(uint **)(ptr + 8) = VTYPE + 1;
+  check_Renderer_init_sanity();
   return;
 }
 
